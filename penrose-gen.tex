@@ -1,0 +1,342 @@
+% via
+% <http://tex.stackexchange.com/questions/61437/penrose-tiling-in-tikz/61623#61623>
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+
+% phi = golden ratio = (1+sqrt(5))/2
+% invphi = 1/phi
+% n: number of decompositions left to do
+% ver: starting vertex
+% angle: direction of first edge
+% len: lenght of first edge
+% rot: sense of rotation (0 => anticlockwise, 1 => clockwise)
+
+\pgfmathsetmacro{\invphi}{2/(1+sqrt(5))}
+
+% default styles
+\tikzset{
+  % borders style
+  penrose line/.style={draw=black,line join=round},
+  % semikites and semidarts styles
+  penrose clockwise semikite/.style={penrose line},
+  penrose anticlockwise semikite/.style={penrose line},
+  penrose clockwise semidart/.style={penrose line},
+  penrose anticlockwise semidart/.style={penrose line},
+  % kites and darts styles
+  penrose kite/.style={penrose line},
+  penrose dart/.style={penrose line},
+  % the three paths (and the three corresponding reverse paths)
+  penrose common/.style={},
+  penrose path 1/.style={penrose common},
+  penrose path 2/.style={penrose common},
+  penrose path 3/.style={penrose common},
+  penrose rev path 1/.style={penrose common},
+  penrose rev path 2/.style={penrose common},
+  penrose rev path 3/.style={penrose common},
+}
+
+\newcommand\penrosedrawclockwisesemikite[3]{% ver, angle, len
+  % semikite (clockwise)
+  \path (#1) +(#2:#3) coordinate (#1-b) +(#2-36:#3) coordinate (#1-c);
+  \path[penrose anticlockwise semikite] (#1)
+  to[penrose path 1] (#1-b)
+  to[penrose path 2] (#1-c)
+  to[penrose path 3] (#1);
+}
+
+\newcommand\penrosedrawanticlockwisesemikite[3]{% ver, angle, len
+  % semikite (anticlockwise)
+  \path (#1) +(#2:#3) coordinate (#1-b) +(#2+36:#3) coordinate (#1-c);
+  \path[penrose clockwise semikite] (#1)
+  to[penrose path 1] (#1-b)
+  to[penrose path 2] (#1-c)
+  to[penrose path 3] (#1);
+}
+
+\newcommand\penrosesemikite[5]{% n, ver, angle, len, rot
+  \ifnum#1=0 % draw or recursive decomposition ?
+  \ifnum#5=1 % anticlockwise or clockwise ?
+  \penrosedrawclockwisesemikite{#2}{#3}{#4}
+  \else
+  \penrosedrawanticlockwisesemikite{#2}{#3}{#4}
+  \fi
+  \else
+  {
+    % decomposition (semikite => 2 semikites and 1 semidart)
+    \edef\dep{#1}
+    \edef\ver{#2}
+    \edef\angle{#3}
+    \edef\len{#4}
+    \edef\rot{#5}
+    \pgfmathtruncatemacro{\n}{\dep-1}
+    \edef\namex{\ver\n}
+    \pgfmathsetlengthmacro{\newlen}{\len*\invphi}
+    \ifnum#5=1 % anticlockwise or clockwise ?
+    \path (\ver) ++(\angle-36:\len) coordinate (\namex);
+    \pgfmathtruncatemacro{\newanglea}{mod(\angle+108,360)}
+    \penrosesemikite{\n}{\namex}{\newanglea}{\newlen}{1}
+    \penrosesemikite{\n}{\namex}{\newanglea}{\newlen}{0}
+    \penrosesemidart{\n}{\ver}{\angle}{\newlen}{1}
+    \else
+    \path (\ver) ++(\angle+36:\len) coordinate (\namex);
+    \pgfmathtruncatemacro{\newanglea}{mod(\angle-108,360)}
+    \penrosesemikite{\n}{\namex}{\newanglea}{\newlen}{0}
+    \penrosesemikite{\n}{\namex}{\newanglea}{\newlen}{1}
+    \penrosesemidart{\n}{\ver}{\angle}{\newlen}{0}
+    \fi
+  }
+  \fi
+}
+
+\newcommand\penrosedrawkite[3]{% ver, angle, len
+  % kite (current clockwise semikite + opposite anticlockwise semikite)
+  \path (#1)
+  +(#2+36:#3) coordinate (#1-b)
+  +(#2:#3)    coordinate (#1-c)
+  +(#2-36:#3) coordinate (#1-d);
+  \path[penrose kite] (#1)
+  to[penrose path 1] (#1-b)
+  to[penrose rev path 2] (#1-c)
+  to[penrose path 2] (#1-d)
+  to[penrose rev path 1] (#1);
+}
+
+\newcommand\penrosekite[5]{% n, ver, angle, len, rot
+  \ifnum#1=0 % draw or recursive decomposition ?
+  \ifnum#5=1 % draw kite if current semikite is clockwise
+  \penrosedrawkite{#2}{#3}{#4}
+  \fi
+  \else
+  {
+    % decomposition (semikite => 2 semikites and 1 semidart)
+    \edef\dep{#1}
+    \edef\ver{#2}
+    \edef\angle{#3}
+    \edef\len{#4}
+    \edef\rot{#5}
+    \pgfmathtruncatemacro{\n}{\dep-1}
+    \edef\namex{\ver\n}
+    \pgfmathsetlengthmacro{\newlen}{\len*\invphi}
+    \ifnum#5=1 % anticlockwise or clockwise ?
+    \path (\ver) ++(\angle-36:\len) coordinate (\namex);
+    \pgfmathtruncatemacro{\newanglea}{mod(\angle+108,360)}
+    \penrosekite{\n}{\namex}{\newanglea}{\newlen}{1}
+    \penrosekite{\n}{\namex}{\newanglea}{\newlen}{0}
+    \penrosedart{\n}{\ver}{\angle}{\newlen}{1}
+    \else
+    \path (\ver) ++(\angle+36:\len) coordinate (\namex);
+    \pgfmathtruncatemacro{\newanglea}{mod(\angle-108,360)}
+    \penrosekite{\n}{\namex}{\newanglea}{\newlen}{0}
+    \penrosekite{\n}{\namex}{\newanglea}{\newlen}{1}
+    \penrosedart{\n}{\ver}{\angle}{\newlen}{0}
+    \fi
+  }
+  \fi
+}
+
+\newcommand\penrosedrawclockwisesemidart[3]{
+  % semidart (clockwise)
+  \path (#1)
+  +(#2:#3)            coordinate (#1-b)
+  +(#2-36:#3*\invphi) coordinate (#1-c);
+  \path[penrose anticlockwise semidart] (#1)
+  to[penrose path 3] (#1-b)
+  to[penrose path 2] (#1-c)
+  to[penrose path 1] (#1);
+}
+
+\newcommand\penrosedrawanticlockwisesemidart[3]{
+  % semidart (anticlockwise)
+ \path (#1)
+  +(#2:#3)            coordinate (#1-b)
+  +(#2+36:#3*\invphi) coordinate (#1-c);
+  \path[penrose clockwise semidart] (#1)
+  to[penrose path 3] (#1-b)
+  to[penrose path 2] (#1-c)
+  to[penrose path 1] (#1);
+ }
+
+\newcommand\penrosesemidart[5]{% n, ver, angle, len, rot
+  \ifnum#1=0 % draw or recursive decomposition ?
+  \ifnum#5=1 % anticlockwise or clockwise ?
+  \penrosedrawclockwisesemidart{#2}{#3}{#4}
+  \else
+  \penrosedrawanticlockwisesemidart{#2}{#3}{#4}
+  \fi
+  \else
+  {
+    % decomposition (semidart => 1 semikite and 1 semidart)
+    \edef\dep{#1}
+    \edef\ver{#2}
+    \edef\angle{#3}
+    \edef\len{#4}
+    \edef\rot{#5}
+    \pgfmathtruncatemacro{\n}{\dep-1}
+    \edef\namex{\ver\n}
+    \pgfmathsetlengthmacro{\newlen}{\len*\invphi}
+    \path (\ver) ++(\angle:\len) coordinate (\namex);
+    \ifnum#5=1 % anticlockwise or clockwise
+    \pgfmathsetmacro{\newanglea}{mod(\angle-144,360)}
+    \pgfmathsetmacro{\newangleb}{mod(\angle-36,360)}
+    \penrosesemidart{\n}{\namex}{\newanglea}{\newlen}{1}
+    \penrosesemikite{\n}{\ver}{\newangleb}{\newlen}{0}
+    \else
+    \pgfmathtruncatemacro{\newanglea}{mod(\angle+144,360)}
+    \pgfmathtruncatemacro{\newangleb}{mod(\angle+36,360)}
+    \penrosesemidart{\n}{\namex}{\newanglea}{\newlen}{0}
+    \penrosesemikite{\n}{\ver}{\newangleb}{\newlen}{1}
+    \fi
+  }
+  \fi
+}
+
+\newcommand\penrosedrawdart[3]{
+  % dart (current clockwise semidart + opposite anticlockwise semidart)
+  \path (#1)
+  +(#2:#3)            coordinate (#1-b)
+  +(#2-36:#3*\invphi) coordinate (#1-c)
+  +(#2-72:#3)         coordinate (#1-d);
+  \path[penrose dart] (#1)
+  to[penrose path 3] (#1-b)
+  to[penrose path 2] (#1-c)
+  to[penrose rev path 2] (#1-d)
+  to[penrose rev path 3] (#1);
+}
+
+\newcommand\penrosedart[5]{% n, ver, angle, len, rot
+  \ifnum#1=0 % draw or recursive decomposition ?
+  \ifnum#5=1 % draw dart if current semidart is clockwise
+  \penrosedrawdart{#2}{#3}{#4}
+  \fi
+  \else
+  {
+    % decomposition (semidart => 1 semikite and 1 semidart)
+    \edef\dep{#1}
+    \edef\ver{#2}
+    \edef\angle{#3}
+    \edef\len{#4}
+    \edef\rot{#5}
+    \pgfmathtruncatemacro{\n}{\dep-1}
+    \edef\namex{\ver\n}
+    \pgfmathsetlengthmacro{\newlen}{\len*\invphi}
+    \path (\ver) ++(\angle:\len) coordinate (\namex);
+    \ifnum#5=1 % anticlockwise or clockwise
+    \pgfmathsetmacro{\newanglea}{mod(\angle-144,360)}
+    \pgfmathsetmacro{\newangleb}{mod(\angle-36,360)}
+    \penrosedart{\n}{\namex}{\newanglea}{\newlen}{1}
+    \penrosekite{\n}{\ver}{\newangleb}{\newlen}{0}
+    \else
+    \pgfmathtruncatemacro{\newanglea}{mod(\angle+144,360)}
+    \pgfmathtruncatemacro{\newangleb}{mod(\angle+36,360)}
+    \penrosedart{\n}{\namex}{\newanglea}{\newlen}{0}
+    \penrosekite{\n}{\ver}{\newangleb}{\newlen}{1}
+    \fi
+  }
+  \fi
+}
+
+\newcommand\setveclength[5]{%
+  %\typeout{-#1-#2-#3-#4-}%
+  \pgfpointanchor{#2}{#3}
+  \pgfgetlastxy{\penrosexa}{\penroseya}
+  \pgfpointanchor{#4}{#5}
+  \pgfgetlastxy{\penrosexb}{\penroseyb}
+  \pgfmathparse{veclen(\penrosexb-\penrosexa,\penroseyb-\penroseya)}
+  \edef#1{\pgfmathresult}
+}
+
+\tikzset{
+  semipenrose sym fill/.style={
+    path picture={
+      \setveclength{\mylen}%
+      {path picture bounding box}{center}%
+      {path picture bounding box}{north west}
+      \pgfmathsetmacro{\len}{1.17*\mylen}
+      \begin{scope}[shift={(path picture bounding box.center)}]
+        \foreach \level in {0,...,4}{
+          \begin{scope}[rotate=\level*72+9]
+            \coordinate (a) at (0,0);
+            \penrosesemikite{#1}{a}{0}{\len pt}{0}
+            \penrosesemikite{#1}{a}{0}{\len pt}{1}
+          \end{scope}
+        }
+      \end{scope}
+    }
+  },
+  semipenrose fill/.style={
+    path picture={
+      \setveclength{\mylen}%
+      {path picture bounding box}{center}%
+      {path picture bounding box}{west}
+      \pgfmathsetmacro{\len}{1.33*\mylen}
+      \begin{scope}[shift={(path picture bounding box.center)},rotate=9]
+        \coordinate (a) at (-\len pt,0);
+        \path (a) +(36:2*\len pt) coordinate (b);
+        \path (a) +(-36:2*\len pt) coordinate (c);
+        \penrosesemidart{#1}{b}{36-180}{2*\len pt}{1}
+        \penrosesemikite{#1}{a}{0}{2*\len pt}{0}
+        \penrosesemikite{#1}{a}{0}{2*\len pt}{1}
+        \penrosesemidart{#1}{c}{180-36}{2*\len pt}{0}
+      \end{scope}
+    }
+  },
+  penrose sym fill/.style={
+    path picture={
+      \setveclength{\mylen}%
+      {path picture bounding box}{center}%
+      {path picture bounding box}{north west}
+      \pgfmathsetmacro{\len}{1.23*\mylen}
+      \begin{scope}[shift={(path picture bounding box.center)}]
+        \foreach \level in {0,...,4}{
+          \begin{scope}[rotate=\level*72+9]
+            \coordinate (a) at (0,0);
+            \penrosekite{#1}{a}{18}{\len pt}{0}
+            \penrosekite{#1}{a}{18}{\len pt}{1}
+          \end{scope}
+        }
+      \end{scope}
+    }
+  },
+  penrose fill/.style={
+    path picture={
+      \setveclength{\mylen}%
+      {path picture bounding box}{center}%
+      {path picture bounding box}{west}
+      \pgfmathsetmacro{\len}{2.38*\mylen}
+      \begin{scope}[shift={(path picture bounding box.center)},rotate=9]
+        \coordinate (a) at (-\len pt,0);
+        \path (a) +(36:2*\len pt) coordinate (b);
+        \path (a) +(-36:2*\len pt) coordinate (c);
+        \penrosedart{#1}{b}{36-180}{2*\len pt}{1}
+        \penrosekite{#1}{a}{0}{2*\len pt}{0}
+        \penrosekite{#1}{a}{0}{2*\len pt}{1}
+        \penrosedart{#1}{c}{180-36}{2*\len pt}{0}
+      \end{scope}
+    }
+  },
+}
+
+\usetikzlibrary{shapes.arrows}
+\pgfmathsetlengthmacro{\len}{4cm}
+\pgfmathtruncatemacro{\recurs}{5}
+\begin{document}
+\begin{tikzpicture}
+  \tikzset{
+    gray arrow/.style={
+      fill=gray,minimum height=.5cm,rotate=-90,
+      single arrow,single arrow head extend=1mm,
+    },
+  }
+  % example of semidarts and semikites
+  \begin{scope}[yshift=-2*\len]
+    \foreach \level in {0,...,4}{
+      \begin{scope}[rotate=\level*72]
+        \coordinate (a) at (0,0);
+        \penrosesemikite{\recurs}{a}{0}{\len}{0}
+        \penrosesemikite{\recurs}{a}{0}{\len}{1}
+      \end{scope}
+    }
+  \end{scope}
+\end{tikzpicture}
+\end{document}
