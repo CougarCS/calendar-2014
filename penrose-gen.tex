@@ -95,6 +95,8 @@
   +(#2+36:#3) coordinate (#1-b)
   +(#2:#3)    coordinate (#1-c)
   +(#2-36:#3) coordinate (#1-d);
+  \pgfmathparse{0.9*rnd+0.3}
+  \definecolor{MyColor}{rgb}{\pgfmathresult,\pgfmathresult,\pgfmathresult}
   \path[penrose kite] (#1)
   to[penrose path 1] (#1-b)
   to[penrose rev path 2] (#1-c)
@@ -288,7 +290,7 @@
       {path picture bounding box}{north west}
       \pgfmathsetmacro{\len}{1.23*\mylen}
       \begin{scope}[shift={(path picture bounding box.center)}]
-        \foreach \level in {0,...,4}{
+        \foreach \level in {0,...,6}{
           \begin{scope}[rotate=\level*72+9]
             \coordinate (a) at (0,0);
             \penrosekite{#1}{a}{18}{\len pt}{0}
@@ -328,15 +330,24 @@
       single arrow,single arrow head extend=1mm,
     },
   }
-  % example of semidarts and semikites
-  \begin{scope}[yshift=-2*\len]
-    \foreach \level in {0,...,4}{
-      \begin{scope}[rotate=\level*72]
-        \coordinate (a) at (0,0);
-        \penrosesemikite{\recurs}{a}{0}{\len}{0}
-        \penrosesemikite{\recurs}{a}{0}{\len}{1}
-      \end{scope}
-    }
+  \tikzset{
+    % style for borders
+    line/.style={draw=white,rounded corners=0pt},
+    % styles for semikites and semidarts
+    penrose clockwise semikite/.style={fill=orange,line},
+    penrose anticlockwise semikite/.style={fill=orange!50!black,line},
+    penrose clockwise semidart/.style={fill=cyan!80,line},
+    penrose anticlockwise semidart/.style={fill=cyan!50,line},
+    % styles for kites and darts
+    penrose kite/.style={fill=red!75!black,line},
+    penrose dart/.style={fill=olive!75!white,line},
+  }
+ \begin{scope}
+    % four styles exists: 'penrose fill', 'penrose sym fill',
+    % 'semipenrose fill' and 'semipenrose sym fill'.
+    % (argument is depth of recursion)
+    \path[penrose fill=7,rounded corners=0mm]
+    (0,0) -- (12,0) -- (12,15) -- (0,15) -- cycle;
   \end{scope}
 \end{tikzpicture}
 \end{document}
