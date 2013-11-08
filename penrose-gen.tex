@@ -290,7 +290,7 @@
       {path picture bounding box}{north west}
       \pgfmathsetmacro{\len}{1.23*\mylen}
       \begin{scope}[shift={(path picture bounding box.center)}]
-        \foreach \level in {0,...,6}{
+        \foreach \level in {0,...,4}{
           \begin{scope}[rotate=\level*72+9]
             \coordinate (a) at (0,0);
             \penrosekite{#1}{a}{18}{\len pt}{0}
@@ -342,12 +342,15 @@
     penrose kite/.style={fill=red!75!black,line},
     penrose dart/.style={fill=olive!75!white,line},
   }
- \begin{scope}
-    % four styles exists: 'penrose fill', 'penrose sym fill',
-    % 'semipenrose fill' and 'semipenrose sym fill'.
-    % (argument is depth of recursion)
-    \path[penrose fill=7,rounded corners=0mm]
-    (0,0) -- (12,0) -- (12,15) -- (0,15) -- cycle;
+  % example of semidarts and semikites
+  \begin{scope}[yshift=-2*\len]
+    \foreach \level in {0,...,7}{
+      \begin{scope}[rotate=\level*72]
+        \coordinate (a) at (0,0);
+        \penrosesemikite{\recurs}{a}{0}{\len}{0}
+        \penrosesemikite{\recurs}{a}{0}{\len}{1}
+      \end{scope}
+    }
   \end{scope}
 \end{tikzpicture}
 \end{document}
